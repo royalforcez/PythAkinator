@@ -22,21 +22,10 @@
           fontFamily: {
             display: ['Space Grotesk'],
           },
-          borderRadius: {
-            DEFAULT: '0.25rem',
-            lg: '0.5rem',
-            xl: '0.75rem',
-            full: '9999px',
-          },
         },
       },
     }
   </script>
-  <style>
-    .glow {
-      box-shadow: 0 0 5px theme('colors.primary'), 0 0 10px theme('colors.primary / 0.8'), 0 0 15px theme('colors.primary / 0.6');
-    }
-  </style>
 </head>
 
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-200">
@@ -44,60 +33,48 @@
     <header class="border-b border-primary/20 dark:border-primary/30 px-4 sm:px-6 lg:px-8">
       <div class="container mx-auto flex h-16 items-center justify-between">
         <div class="flex items-center gap-4">
-          <svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-linecap="round"
-              stroke-linejoin="round" stroke-width="2"></path>
-            <path d="M2 7L12 12L22 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="2"></path>
-            <path d="M12 12V22" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-            </path>
-          </svg>
           <h1 class="text-xl font-bold tracking-wider text-slate-800 dark:text-white">AI Interrogation</h1>
-        </div>
-        <div class="hidden md:flex items-center gap-6">
-          <a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
-            href="#">How to play</a>
-          <a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
-            href="#">About</a>
-          <button
-            class="px-4 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-            Sign In
-          </button>
         </div>
       </div>
     </header>
+
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
       <div class="max-w-3xl mx-auto flex flex-col items-center text-center">
         <div class="relative w-full">
-          <div class="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-xl blur-2xl"></div>
           <div
             class="relative bg-background-light dark:bg-background-dark/50 border border-primary/20 dark:border-primary/40 rounded-xl p-6 md:p-8 space-y-6">
-            <h2 class="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white tracking-tight">PythAkinator
-            </h2>
+
+            <h2 class="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white tracking-tight">PythAkinator</h2>
             <p class="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
               Ask the AI questions to guess the secret word. Be strategic, you have limited attempts.
             </p>
+
+            <!-- Chat box -->
+            <div id="chat" class="w-full h-64 overflow-y-auto border border-slate-700 rounded-lg p-3 text-left space-y-2 bg-background-dark"></div>
+
+            <!-- Input + Send -->
             <div class="w-full pt-4">
               <div class="relative">
-                <input
+                <input id="user-input"
                   class="w-full h-14 pl-4 pr-12 bg-background-light dark:bg-background-dark border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-300"
                   placeholder="Ask your question..." type="text" />
-                <button
+                <button id="send-btn"
                   class="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-primary hover:text-primary/80 transition-colors">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 5l7 7-7 7M5 12h14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                    </path>
+                    <path d="M13 5l7 7-7 7M5 12h14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
                   </svg>
                 </button>
               </div>
             </div>
+
+            <!-- Buttons -->
             <div class="w-full flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button
+              <button id="reset-btn"
                 class="w-full sm:w-auto px-6 py-3 font-semibold text-primary border border-primary/50 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors">
                 Reset
               </button>
-              <button
+              <button id="quit-btn"
                 class="w-full sm:w-auto px-6 py-3 font-semibold text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                 Quit
               </button>
@@ -108,6 +85,54 @@
     </main>
   </div>
 
-</body>
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value.trim();
+      if (!message) return;
 
+      addMessage("You", message, "text-blue-400");
+      input.value = "";
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+
+      addMessage("AI", data.reply, "text-green-400");
+    }
+
+    function addMessage(sender, text, colorClass) {
+      const chatBox = document.getElementById("chat");
+      chatBox.innerHTML += `<div class="${colorClass}"><strong>${sender}:</strong> ${text}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Events
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
+    document.getElementById("user-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+    document.getElementById("reset-btn").addEventListener("click", async () => {
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "reset" })
+      });
+      const data = await res.json();
+      addMessage("System", data.reply, "text-yellow-400");
+    });
+    document.getElementById("quit-btn").addEventListener("click", async () => {
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "quit" })
+      });
+      const data = await res.json();
+      addMessage("System", data.reply, "text-red-400");
+    });
+  </script>
+</body>
 </html>
