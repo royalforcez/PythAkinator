@@ -7,8 +7,13 @@ import ollama
 
 response = ollama.chat(model='gemma3:12b', messages=[
   {
+      'role': 'system',
+      'content': 'Your are an AI assistant',
+  },  
+  {
     'role': 'user',
     'content': 'We want to play a game like Akinator, I think about something, and you are asking me questions to find out what it is. And I can answer only "yes" or "no".',
   },
+  
 ])
 print(response['message']['content'])
