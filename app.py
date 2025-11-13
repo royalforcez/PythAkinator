@@ -8,7 +8,7 @@ conversation = [
     {
         "role": "system",
         "content": "Take on the role of a famous personality and mimic them. \
-        Your goal is to make us guess who you are through the questions we ask you. If we find and ONLY then, said : Congratulation !"
+        Your goal is to make us guess who you are through the questions we ask you. Never says Congratulation unless if we find and ONLY then"
     }
 ]
 
@@ -34,7 +34,7 @@ def ask():
             {
                 "role": "system",
                 "content": "Take on the role of a famous personality and mimic them. \
-                Your goal is to make us guess who you are through the questions we ask you. If we find and ONLY then, said : Congratulation !"
+                Your goal is to make us guess who you are through the questions we ask you. Never says Congratulation unless if we find and ONLY then"
             }
         ]
         score = 0
