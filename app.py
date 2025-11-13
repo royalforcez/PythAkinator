@@ -3,16 +3,18 @@ import ollama
 
 app = Flask(__name__)
 
-# On garde la conversation en mémoire ici (reset possible)
-conversation = [
-    {
+def initial_system_message():
+    return {
         "role": "system",
-        "content": "Take on the role of a famous personality and mimic them. \
-        Your goal is to make us guess who you are through the questions we ask you. Never says Congratulation unless if we find and ONLY then"
+        "content": "Take on the role of a famous personality and mimic them. "
+                   "Your goal is to make us guess who you are through the questions we ask you. "
+                   "Never says Congratulation unless if we find and ONLY then"
     }
-]
 
-# Tabelleau pour suivre le score
+# On garde la conversation en mémoire ici (reset possible)
+conversation = [ initial_system_message() ]
+
+# Tableau pour suivre le score
 score = 0
 
 @app.route("/")
@@ -24,21 +26,18 @@ def ask():
     global conversation
     global score
     data = request.get_json()
-    user_message = data.get("message", "").strip()
+    user_message = (data.get("message", "") or "").strip()
+    lower = user_message.lower()
 
-# Gestion des commandes spéciales
-    if user_message.lower() in ["quit", "exit", "stop"]:
-        return jsonify({"reply": "🔴 Conversation ended.", "score": score})
-    elif user_message.lower() == "reset":
-        conversation = [
-            {
-                "role": "system",
-                "content": "Take on the role of a famous personality and mimic them. \
-                Your goal is to make us guess who you are through the questions we ask you. Never says Congratulation unless if we find and ONLY then"
-            }
-        ]
+    # Quit -> end conversation and reset scoreboard
+    if lower in ["quit", "exit", "stop"]:
         score = 0
-        return jsonify({"reply": "⚡ Conversation reset.", "score": score})
+        return jsonify({"reply": "🔴 Conversation ended. Scoreboard reset.", "score": score})
+
+    # Nouvelle personnalité -> reset conversation ONLY (keep score)
+    if lower in ["new_personality", "new personality", "new", "nouvelle_personnalite", "nouvelle personnalité", "nouvelle_personnalité"]:
+        conversation = [ initial_system_message() ]
+        return jsonify({"reply": "⚡ Nouvelle personnalité sélectionnée. La conversation a été réinitialisée (score conservé).", "score": score})
 
     # Ajouter le message de l’utilisateur
     conversation.append({"role": "user", "content": user_message})
@@ -51,7 +50,7 @@ def ask():
 
     # Ajouter la réponse à la conversation
     conversation.append({"role": "assistant", "content": ai_reply})
-    
+
     # Si l'IA félicite (ex: "Congratulation" / "Congratulations"), incrémenter le score
     if "congrat" in ai_reply.lower():
         score += 1
@@ -61,6 +60,13 @@ def ask():
 @app.route("/score", methods=["GET"])
 def get_score():
     return jsonify({"score": score})
+
+# Endpoint pour réinitialiser explicitement le scoreboard depuis le frontend
+@app.route("/reset_score", methods=["POST"])
+def reset_score():
+    global score
+    score = 0
+    return jsonify({"reply": "⚡ Scoreboard réinitialisé.", "score": score})
 
 if __name__ == "__main__":
     app.run(debug=True)

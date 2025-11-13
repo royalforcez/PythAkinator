@@ -54,7 +54,6 @@
             <div class="w-full flex flex-col md:flex-row gap-6 items-start">
               <!-- Chat box -->
               <div class="flex-1">
-                <!-- Augmented chat height and slightly larger, less tight font for readability -->
                 <div id="chat"
                      class="w-full h-96 md:h-[28rem] overflow-y-auto border border-slate-700 rounded-lg p-6 text-left space-y-4 bg-background-dark text-base md:text-lg leading-relaxed tracking-wide">
                 </div>
@@ -88,8 +87,14 @@
             <div class="w-full flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <button id="reset-btn"
                 class="w-full sm:w-auto px-6 py-3 font-semibold text-primary border border-primary/50 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors">
-                Reset
+                Nouvelle personnalité
               </button>
+
+              <button id="reset-score-btn"
+                class="w-full sm:w-auto px-6 py-3 font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors">
+                Reset scoreboard
+              </button>
+
               <button id="quit-btn"
                 class="w-full sm:w-auto px-6 py-3 font-semibold text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                 Quit
@@ -148,16 +153,28 @@
     document.getElementById("user-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
     });
+
+    // Nouvelle personnalité -> reset conversation only
     document.getElementById("reset-btn").addEventListener("click", async () => {
       const res = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "reset" })
+        body: JSON.stringify({ message: "new_personality" })
       });
       const data = await res.json();
       addMessage("System", data.reply, "text-yellow-400");
       if (typeof data.score !== "undefined") updateScore(data.score);
     });
+
+    // Reset scoreboard explicit
+    document.getElementById("reset-score-btn").addEventListener("click", async () => {
+      const res = await fetch("/reset_score", { method: "POST" });
+      const data = await res.json();
+      addMessage("System", data.reply, "text-yellow-400");
+      if (typeof data.score !== "undefined") updateScore(data.score);
+    });
+
+    // Quit -> server will reset scoreboard
     document.getElementById("quit-btn").addEventListener("click", async () => {
       const res = await fetch("/ask", {
         method: "POST",
