@@ -12,7 +12,7 @@ L'utilisateurs pose les question et peux à tout moment réinisialiser ou quitte
 
 # PythAkinator avec IA c'est quoi ?
 L'utilisateur doit deviner la personnalité que l'IA incarne au travers de questions, 
-celle ci joue le jeux et donne des indices à chaque nouvelle question.
+celle ci joue le jeux, copie ces mimics et donne des indices à chaque nouvelle question.
 
 ---
 
