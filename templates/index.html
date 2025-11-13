@@ -38,8 +38,8 @@
       </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-      <div class="max-w-3xl mx-auto flex flex-col items-center text-center">
+    <main class="flex-grow container mx-auto px-6 sm:px-8 lg:px-12 py-8 md:py-16">
+      <div class="max-w-6xl mx-auto flex flex-col items-center text-center">
         <div class="relative w-full">
           <div
             class="relative bg-background-light dark:bg-background-dark/50 border border-primary/20 dark:border-primary/40 rounded-xl p-6 md:p-8 space-y-6">
@@ -47,25 +47,41 @@
             <h2 class="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white tracking-tight">PythAkinator</h2>
             <p class="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
               Ask the AI questions to guess the secret personnality. You have unlimited attempts !!!
+              You get one point each time you guess and the AI says "Congratulations".
             </p>
 
-            <!-- Chat box -->
-            <div id="chat" class="w-full h-64 overflow-y-auto border border-slate-700 rounded-lg p-3 text-left space-y-2 bg-background-dark"></div>
+            <!-- Chat + Score layout -->
+            <div class="w-full flex flex-col md:flex-row gap-6 items-start">
+              <!-- Chat box -->
+              <div class="flex-1">
+                <!-- Augmented chat height and slightly larger, less tight font for readability -->
+                <div id="chat"
+                     class="w-full h-96 md:h-[28rem] overflow-y-auto border border-slate-700 rounded-lg p-6 text-left space-y-4 bg-background-dark text-base md:text-lg leading-relaxed tracking-wide">
+                </div>
 
-            <!-- Input + Send -->
-            <div class="w-full pt-4">
-              <div class="relative">
-                <input id="user-input"
-                  class="w-full h-14 pl-4 pr-12 bg-background-light dark:bg-background-dark border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-300"
-                  placeholder="Ask your question..." type="text" />
-                <button id="send-btn"
-                  class="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-primary hover:text-primary/80 transition-colors">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 5l7 7-7 7M5 12h14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                  </svg>
-                </button>
+                <!-- Input + Send -->
+                <div class="w-full pt-4">
+                  <div class="relative">
+                    <input id="user-input"
+                      class="w-full h-14 pl-4 pr-12 bg-background-light dark:bg-background-dark border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-300 text-base md:text-lg leading-relaxed tracking-wide"
+                      placeholder="Ask your question..." type="text" />
+                    <button id="send-btn"
+                      class="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-primary hover:text-primary/80 transition-colors">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 5l7 7-7 7M5 12h14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              <!-- Scoreboard -->
+              <aside id="scoreboard" class="w-full md:w-56 bg-white dark:bg-background-dark/60 border border-primary/10 dark:border-primary/20 rounded-lg p-4 text-left">
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Scoreboard</h3>
+                <div class="text-4xl font-bold text-primary dark:text-primary/90" id="score-value">0</div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Wins (when AI says congratulations)</p>
+              </aside>
             </div>
 
             <!-- Buttons -->
@@ -86,6 +102,22 @@
   </div>
 
   <script>
+    async function fetchScore() {
+      try {
+        const res = await fetch("/score");
+        if (!res.ok) return;
+        const data = await res.json();
+        updateScore(data.score);
+      } catch (e) {
+        console.error("Failed to fetch score", e);
+      }
+    }
+
+    function updateScore(value) {
+      const el = document.getElementById("score-value");
+      el.textContent = String(value ?? 0);
+    }
+
     async function sendMessage() {
       const input = document.getElementById("user-input");
       const message = input.value.trim();
@@ -102,6 +134,7 @@
       const data = await res.json();
 
       addMessage("AI", data.reply, "text-green-400");
+      if (typeof data.score !== "undefined") updateScore(data.score);
     }
 
     function addMessage(sender, text, colorClass) {
@@ -123,6 +156,7 @@
       });
       const data = await res.json();
       addMessage("System", data.reply, "text-yellow-400");
+      if (typeof data.score !== "undefined") updateScore(data.score);
     });
     document.getElementById("quit-btn").addEventListener("click", async () => {
       const res = await fetch("/ask", {
@@ -132,7 +166,11 @@
       });
       const data = await res.json();
       addMessage("System", data.reply, "text-red-400");
+      if (typeof data.score !== "undefined") updateScore(data.score);
     });
+
+    // Initialize scoreboard on load
+    document.addEventListener("DOMContentLoaded", fetchScore);
   </script>
 </body>
 </html>
